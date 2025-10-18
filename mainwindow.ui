@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect><x>0</x><y>0</y><width>1000</width><height>650</height></rect>
+  </property>
+  <property name="windowTitle">
+   <string>Lab Cultures</string>
+  </property>
+
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,2">
+    <!-- Left pane -->
+    <item>
+     <layout class="QVBoxLayout" name="leftLayout">
+      <item>
+       <widget class="QLabel" name="labelCultures">
+        <property name="text"><string>Cultures</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QListView" name="listView">
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonShowLineage">
+        <property name="text">
+         <string>Show Lineage &amp; Summary</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonShowPlot">
+        <property name="text">
+         <string>Show Plot (numeric key)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+
+    <!-- Right pane -->
+    <item>
+     <layout class="QVBoxLayout" name="rightLayout">
+      <item>
+       <widget class="QGroupBox" name="groupCreate">
+        <property name="title">
+         <string>Create / Derive / Mix (auto)</string>
+        </property>
+        <layout class="QFormLayout" name="formLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="labelName">
+           <property name="text"><string>Name (optional)</string></property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEditName"/>
+         </item>
+
+         <item row="1" column="0">
+          <widget class="QLabel" name="labelText">
+           <property name="text"><string>Text desc</string></property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="lineEditText">
+           <property name="placeholderText">
+            <string>e.g. incubated under UV</string>
+           </property>
+          </widget>
+         </item>
+
+         <item row="2" column="0">
+          <widget class="QLabel" name="labelKey">
+           <property name="text"><string>Numeric key</string></property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="lineEditKey">
+           <property name="placeholderText">
+            <string>e.g. temperature or duration</string>
+           </property>
+          </widget>
+         </item>
+
+         <item row="3" column="0">
+          <widget class="QLabel" name="labelValue">
+           <property name="text"><string>Numeric value</string></property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QDoubleSpinBox" name="doubleSpinBoxValue">
+           <property name="minimum"><double>-1000000000.0</double></property>
+           <property name="maximum"><double>1000000000.0</double></property>
+           <property name="decimals"><number>2</number></property>
+          </widget>
+         </item>
+
+         <item row="4" column="0" colspan="2">
+          <layout class="QHBoxLayout" name="buttonsLayout">
+           <item>
+            <widget class="QPushButton" name="pushButtonAdd">
+             <property name="text">
+              <string>Add (Root / Derived / Mix by selection)</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+
+      <item>
+       <widget class="QLabel" name="labelInfo">
+        <property name="text"><string>Info / Summary</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QTextEdit" name="textEditInfo">
+        <property name="readOnly"><bool>true</bool></property>
+        <property name="minimumHeight"><number>180</number></property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+
+  <widget class="QMenuBar" name="menubar"/>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
