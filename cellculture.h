@@ -7,16 +7,16 @@
 #include <QString>
 
 struct Operation {
-    QString text;   // e.g. "incubated under UV"
-    QString key;    // e.g. "temperature" or "duration"
-    double  value;  // numeric value
+    QString text;
+    QString key;
+    double  value;
 };
 
 struct CellCulture {
     QUuid id;
     QString name;
     int passage{0};
-    QVector<QUuid> parents;      // empty for root, 1 for derived, >1 for mix
+    QVector<QUuid> parents;   // empty for root; size==1 for derived
     QVector<Operation> ops;
 };
 
@@ -39,12 +39,6 @@ public:
                      const QString &textDesc,
                      const QString &numKey,
                      double numVal);
-
-    QUuid addMix(const QVector<QUuid> &parentIds,
-                 const QString &name,
-                 const QString &textDesc,
-                 const QString &numKey,
-                 double numVal);
 
     const QVector<CellCulture> &all() const { return m_items; }
     int indexOf(const QUuid &id) const;

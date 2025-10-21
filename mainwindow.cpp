@@ -7,9 +7,12 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+QT_CHARTS_USE_NAMESPACE
+#endif
 
-static QString cultureLabel(const CellCulture &c) {
-    return c.name; // passage included by auto-naming when name empty
+    static QString cultureLabel(const CellCulture &c) {
+    return c.name;
 }
 
 static QVector<double> valuesForKeyAlongPath(const CellCultureStore& store,
@@ -23,7 +26,7 @@ static QVector<double> valuesForKeyAlongPath(const CellCultureStore& store,
         for (const auto& op : c->ops) {
             if (op.key.compare(key, Qt::CaseInsensitive) == 0) {
                 vals.push_back(op.value);
-                break; // take first match per culture
+                break;
             }
         }
     }
@@ -36,19 +39,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // list model + multi-select (for MIX)
     ui->listView->setModel(&m_list);
-    ui->listView->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    ui->listView->setSelectionMode(QAbstractItemView::SingleSelection); // <— single only
 
-    // seed a root
     m_store.addRoot("Root A", "initial stock", "temperature", 37.0);
 
-    // wire buttons
     connect(ui->pushButtonAdd, &QPushButton::clicked, this, &MainWindow::addCulture);
     connect(ui->pushButtonShowLineage, &QPushButton::clicked, this, &MainWindow::showLineage);
     connect(ui->pushButtonShowPlot, &QPushButton::clicked, this, &MainWindow::showNumericPlot);
 
-    // refresh when data changes
     connect(&m_store, &CellCultureStore::changed, this, [this]{ refreshList(); });
 
     refreshList();
@@ -65,16 +64,13 @@ void MainWindow::refreshList() {
 }
 
 void MainWindow::addCulture() {
-    // Name optional; text+key required
     if (ui->lineEditText->text().isEmpty() || ui->lineEditKey->text().isEmpty()) {
         QMessageBox::warning(this, "Missing fields", "Fill Text and Numeric Key.");
         return;
     }
 
-    const auto indexes = ui->listView->selectionModel()->selectedIndexes();
-    const int n = indexes.size();
-
-    if (n == 0) {
+    const QModelIndex idx = ui->listView->currentIndex();
+    if (!idx.isValid()) {
         // ROOT
         m_store.addRoot(ui->lineEditName->text(),
                         ui->lineEditText->text(),
@@ -83,40 +79,19 @@ void MainWindow::addCulture() {
         return;
     }
 
-    if (n == 1) {
-        // DERIVED
-        const int row = indexes.first().row();
-        if (row < 0 || row >= m_store.all().size()) {
-            QMessageBox::warning(this, "Invalid selection", "Please select a valid parent.");
-            return;
-        }
-        const QUuid parentId = m_store.all().at(row).id;
-
-        m_store.addDerived(parentId,
-                           ui->lineEditName->text(),
-                           ui->lineEditText->text(),
-                           ui->lineEditKey->text(),
-                           ui->doubleSpinBoxValue->value());
+    // DERIVED
+    const int row = idx.row();
+    if (row < 0 || row >= m_store.all().size()) {
+        QMessageBox::warning(this, "Invalid selection", "Please select a valid parent.");
         return;
     }
+    const QUuid parentId = m_store.all().at(row).id;
 
-    // MIX (2+)
-    QVector<QUuid> parents; parents.reserve(n);
-    for (const auto &idx : indexes) {
-        const int row = idx.row();
-        if (row >= 0 && row < m_store.all().size())
-            parents.push_back(m_store.all().at(row).id);
-    }
-    if (parents.size() < 2) {
-        QMessageBox::warning(this, "Invalid selection", "Select at least two valid parents.");
-        return;
-    }
-
-    m_store.addMix(parents,
-                   ui->lineEditName->text(),
-                   ui->lineEditText->text(),
-                   ui->lineEditKey->text(),
-                   ui->doubleSpinBoxValue->value());
+    m_store.addDerived(parentId,
+                       ui->lineEditName->text(),
+                       ui->lineEditText->text(),
+                       ui->lineEditKey->text(),
+                       ui->doubleSpinBoxValue->value());
 }
 
 void MainWindow::showLineage() {
@@ -145,12 +120,10 @@ void MainWindow::showLineage() {
             const CellCulture *c = m_store.byId(path[i]);
             if (!c) continue;
             out += QString("  %1. %2\n").arg(i + 1).arg(c->name);
-            for (int j = 0; j < c->ops.size(); ++j) {
-                const Operation &op = c->ops[j];
+            for (const auto &op : c->ops)
                 out += QString("      - %1 | %2 = %3\n")
                            .arg(op.text, op.key)
                            .arg(op.value);
-            }
         }
         const auto s = m_store.summarizePath(path, key);
         out += QString("  Summary '%1': count=%2, sum=%3, min=%4, max=%5\n\n")
@@ -162,7 +135,6 @@ void MainWindow::showLineage() {
 
 void MainWindow::showNumericPlot()
 {
-    // selected culture
     const QModelIndex idx = ui->listView->currentIndex();
     if (!idx.isValid()) {
         QMessageBox::warning(this, "No selection", "Select a culture to plot.");
@@ -172,40 +144,33 @@ void MainWindow::showNumericPlot()
     if (row < 0 || row >= m_store.all().size()) return;
     const QUuid targetId = m_store.all().at(row).id;
 
-    // numeric key (default temperature)
     const QString key = ui->lineEditKey->text().isEmpty()
                             ? QStringLiteral("temperature")
                             : ui->lineEditKey->text();
 
-    // choose the longest root->target path (simple heuristic)
     const auto paths = m_store.lineagePaths(targetId);
     if (paths.isEmpty()) {
         QMessageBox::information(this, "Nothing to plot", "No lineage found.");
         return;
     }
-    QVector<QUuid> best = paths.first();
-    for (const auto& p : paths) if (p.size() > best.size()) best = p;
+    const QVector<QUuid>& path = paths.first(); // there will be only one in non-mix
 
-    // collect values
-    const auto vals = valuesForKeyAlongPath(m_store, best, key);
+    const auto vals = valuesForKeyAlongPath(m_store, path, key);
     if (vals.isEmpty()) {
         QMessageBox::information(this, "No data",
                                  QString("No '%1' values found along the path.").arg(key));
         return;
     }
 
-    // build line series
     auto *series = new QLineSeries();
     for (int i = 0; i < vals.size(); ++i)
         series->append(i, vals[i]);
 
-    // chart
     auto *chart = new QChart();
     chart->addSeries(series);
     chart->setTitle(QString("'%1' along production steps").arg(key));
     chart->legend()->hide();
 
-    // axes
     auto *axisX = new QValueAxis();
     axisX->setTitleText("Step");
     axisX->setLabelFormat("%d");
@@ -218,7 +183,6 @@ void MainWindow::showNumericPlot()
     chart->addAxis(axisY, Qt::AlignLeft);
     series->attachAxis(axisY);
 
-    // show in a simple dialog
     auto *view = new QChartView(chart);
     view->setRenderHint(QPainter::Antialiasing);
 

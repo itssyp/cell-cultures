@@ -20,9 +20,9 @@ private:
     void refreshList();
 
 private slots:
-    void addCulture();     // Root / Derived / Mix by selection
-    void showLineage();    // Text summary
-    void showNumericPlot(); // Simple plot using Qt Charts
+    void addCulture();     // Root (none selected) or Derived (single selected)
+    void showLineage();
+    void showNumericPlot();
 
 public:
     explicit MainWindow(QWidget *parent = nullptr);
